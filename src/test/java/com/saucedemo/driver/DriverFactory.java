@@ -9,7 +9,10 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
 
-/** Creates a Chromium driver using the locally installed binary and chromedriver (no Selenium Manager downloads). */
+/**
+ * Creates a Chrome/Chromium driver. Uses browser.binary / browser.driver when set; when blank, falls back to the
+ * default Chrome install and Selenium Manager. Override per machine with -Dbrowser.binary=... -Dbrowser.driver=...
+ */
 public final class DriverFactory {
 
     private DriverFactory() {
@@ -17,7 +20,10 @@ public final class DriverFactory {
 
     public static WebDriver create() {
         ChromeOptions options = new ChromeOptions();
-        options.setBinary(TestConfig.browserBinary());
+        // Blank browser.binary = use the default Chrome install.
+        if (!TestConfig.browserBinary().isBlank()) {
+            options.setBinary(TestConfig.browserBinary());
+        }
         if (TestConfig.headless()) {
             options.addArguments("--headless=new");
         }
@@ -31,6 +37,10 @@ public final class DriverFactory {
         // instead of hanging.
         options.setUnhandledPromptBehaviour(UnexpectedAlertBehaviour.ACCEPT_AND_NOTIFY);
 
+        // Blank browser.driver = let Selenium Manager find/download a matching chromedriver.
+        if (TestConfig.browserDriver().isBlank()) {
+            return new ChromeDriver(options);
+        }
         ChromeDriverService service = new ChromeDriverService.Builder()
                 .usingDriverExecutable(new File(TestConfig.browserDriver()))
                 .build();
